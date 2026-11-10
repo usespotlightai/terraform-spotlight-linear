@@ -1,0 +1,30 @@
+name: Release
+
+# release-please keeps a release pull request open on main. Merging it tags the
+# release and publishes the GitHub release, which the Terraform Registry picks up.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate a token for release-please
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_REPO_APP_ID }}
+          private-key: ${{ secrets.APP_REPO_PRIVATE_KEY }}
+      - uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}

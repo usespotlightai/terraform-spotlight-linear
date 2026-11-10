@@ -1,0 +1,55 @@
+name: Pre-commit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  TERRAFORM_DOCS_VERSION: v0.24.0
+  TFLINT_VERSION: v0.64.0
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Set up the Spotlight provider
+        uses: ./.github/actions/spotlight-provider
+        with:
+          app-id: ${{ secrets.APP_REPO_APP_ID }}
+          private-key: ${{ secrets.APP_REPO_PRIVATE_KEY }}
+
+      - name: Set up tflint
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Install terraform-docs
+        run: |
+          curl -sSfL "https://github.com/terraform-docs/terraform-docs/releases/download/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin terraform-docs
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Pre-commit
+        uses: pre-commit/action@v3.0.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          extra_args: --all-files --color=always --show-diff-on-failure

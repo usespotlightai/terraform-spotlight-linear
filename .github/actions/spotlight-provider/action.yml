@@ -1,0 +1,68 @@
+name: Spotlight provider
+description: Build the Spotlight Terraform provider from source and make Terraform install it from a local mirror.
+
+inputs:
+  app-id:
+    description: The ID of the GitHub App that can read usespotlightai/terraform-provider-spotlight.
+    required: true
+  private-key:
+    description: The private key of that GitHub App.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Check that the GitHub App secrets are set
+      shell: bash
+      env:
+        APP_ID: ${{ inputs.app-id }}
+        PRIVATE_KEY: ${{ inputs.private-key }}
+      run: |
+        if [ -z "$APP_ID" ] || [ -z "$PRIVATE_KEY" ]; then
+          echo "::error::APP_REPO_APP_ID and APP_REPO_PRIVATE_KEY are not set. Add them as Actions secrets and as Dependabot secrets."
+          exit 1
+        fi
+
+    - name: Generate a provider repository token
+      id: app-token
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: usespotlightai
+        repositories: terraform-provider-spotlight
+
+    - name: Check out the provider
+      uses: actions/checkout@v7
+      with:
+        repository: usespotlightai/terraform-provider-spotlight
+        token: ${{ steps.app-token.outputs.token }}
+        path: .spotlight-provider
+        persist-credentials: false
+
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: .spotlight-provider/go.mod
+        cache-dependency-path: .spotlight-provider/go.sum
+
+    - name: Build the provider into a mirror
+      shell: bash
+      run: |
+        mirror="$RUNNER_TEMP/terraform-mirror"
+        target="$mirror/registry.terraform.io/usespotlightai/spotlight/0.1.0/$(go env GOOS)_$(go env GOARCH)"
+        mkdir -p "$target"
+        (cd .spotlight-provider && go build -o "$target/terraform-provider-spotlight_v0.1.0" .)
+        rm -rf .spotlight-provider
+        cat > "$RUNNER_TEMP/terraform.tfrc" <<EOF
+        provider_installation {
+          filesystem_mirror {
+            path    = "$mirror"
+            include = ["registry.terraform.io/usespotlightai/spotlight"]
+          }
+          direct {
+            exclude = ["registry.terraform.io/usespotlightai/spotlight"]
+          }
+        }
+        EOF
+        echo "TF_CLI_CONFIG_FILE=$RUNNER_TEMP/terraform.tfrc" >> "$GITHUB_ENV"

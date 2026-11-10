@@ -1,0 +1,42 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: Terraform ${{ matrix.terraform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform:
+          - '1.11'
+          - latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ matrix.terraform }}
+          terraform_wrapper: false
+
+      - name: Set up the Spotlight provider
+        uses: ./.github/actions/spotlight-provider
+        with:
+          app-id: ${{ secrets.APP_REPO_APP_ID }}
+          private-key: ${{ secrets.APP_REPO_PRIVATE_KEY }}
+
+      - name: Init
+        run: terraform init -backend=false -input=false
+
+      - name: Test
+        run: terraform test
