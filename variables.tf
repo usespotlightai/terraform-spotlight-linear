@@ -37,16 +37,6 @@ variable "spotlight_url" {
   default     = "https://app.usespotlight.ai"
 }
 
-variable "user_id" {
-  description = "The ID of the Linear user that owns `api_key`. Spotlight ignores what this user does in Linear, so its own comments never answer a question or open a task."
-  type        = string
-
-  validation {
-    condition     = can(regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", var.user_id))
-    error_message = "user_id is a Linear user ID, a UUID as in 2c5e3b4a-1f0d-4e6b-9a7c-8d2e1f3a4b5c."
-  }
-}
-
 variable "label" {
   description = "The name of the Linear label that gives an issue to Spotlight, compared without case. An issue that gets the label opens a task. Null opens no task from Linear."
   type        = string
@@ -81,35 +71,28 @@ variable "comment_approval" {
   default     = null
 }
 
-variable "create_secrets" {
-  description = "Whether the module creates the two secrets from `signing_secret` and `api_key`. False uses the workspace secrets named `signing_secret_name` and `api_key_name`, which you keep yourself; the API key's secret must then be bound to `api.linear.app` in the `authorization` header, with no prefix."
+variable "create_signing_secret" {
+  description = "Whether the module creates the secret that holds `signing_secret`. False uses the workspace secret named `signing_secret_name`, which you keep yourself."
   type        = bool
   default     = true
 }
 
 variable "signing_secret" {
-  description = "The signing secret of the Linear webhook. Needed when `create_secrets` is true."
-  type        = string
-  default     = null
-  sensitive   = true
-  ephemeral   = true
-}
-
-variable "api_key" {
-  description = "A Linear API key (`lin_api_`) of the user `user_id`. Needed when `create_secrets` is true."
+  description = "The signing secret of the Linear webhook. Needed when `create_signing_secret` is true."
   type        = string
   default     = null
   sensitive   = true
   ephemeral   = true
 
   validation {
-    condition     = !var.create_secrets || (var.signing_secret != null && var.api_key != null)
-    error_message = "Give signing_secret and api_key, or set create_secrets to false."
+    condition     = !var.create_signing_secret || var.signing_secret != null
+    error_message = "Give signing_secret, or set create_signing_secret to false."
   }
 }
 
+
 variable "secret_version" {
-  description = "Change it when `signing_secret` or `api_key` changes, so Terraform sends the new values to Spotlight."
+  description = "Change it when `signing_secret` changes, so Terraform sends the new value to Spotlight."
   type        = number
   default     = 1
 }
@@ -118,10 +101,4 @@ variable "signing_secret_name" {
   description = "The name of the workspace secret that holds the signing secret."
   type        = string
   default     = "LINEAR_SIGNING_SECRET"
-}
-
-variable "api_key_name" {
-  description = "The name of the workspace secret that holds the API key."
-  type        = string
-  default     = "LINEAR_API_KEY"
 }

@@ -13,7 +13,6 @@ data "spotlight_team" "this" {
 
 locals {
   signing_secret_name = try(spotlight_secret.signing[0].name, var.signing_secret_name)
-  api_key_name        = try(spotlight_secret.api_key[0].name, var.api_key_name)
 
   issue_mark      = "${var.integration}.issue"
   identifier_mark = "${var.integration}.identifier"
@@ -22,14 +21,15 @@ locals {
   author   = { email = "$${{ has(body.actor) && has(body.actor.email) && body.actor.email != null ? body.actor.email : \"\" }}" }
 
   is_issue   = "has(body.type) && body.type == \"Issue\" && has(body.action) && has(body.data)"
-  is_comment = "has(body.type) && body.type == \"Comment\" && has(body.action) && body.action == \"create\" && has(body.data) && has(body.data.issueId) && body.data.issueId != null"
+  by_an_app  = "(has(body.data.botActor) && body.data.botActor != null) || (has(body.actor) && body.actor != null && has(body.actor.type) && body.actor.type == \"OauthClient\")"
+  is_comment = "has(body.type) && body.type == \"Comment\" && has(body.action) && body.action == \"create\" && has(body.data) && has(body.data.issueId) && body.data.issueId != null && !(${local.by_an_app})"
 
   comment_mutation = "mutation CommentCreate($input: CommentCreateInput!) { commentCreate(input: $input) { success comment { id url } } }"
 
   comment_on = {
     method = "POST"
     url    = "https://api.linear.app/graphql"
-    auth   = { secrets = ["secret.${local.api_key_name}"] }
+    auth   = { oauth2 = { connection = true } }
     expect = { success = "$${{ !has(response.errors) && response.data.commentCreate.success }}" }
   }
 
@@ -107,23 +107,11 @@ locals {
 }
 
 resource "spotlight_secret" "signing" {
-  count = var.create && var.create_secrets ? 1 : 0
+  count = var.create && var.create_signing_secret ? 1 : 0
 
   workspace_id     = data.spotlight_workspace.this[0].id
   name             = var.signing_secret_name
   value_wo         = var.signing_secret
-  value_wo_version = var.secret_version
-}
-
-resource "spotlight_secret" "api_key" {
-  count = var.create && var.create_secrets ? 1 : 0
-
-  workspace_id = data.spotlight_workspace.this[0].id
-  name         = var.api_key_name
-  bindings = [
-    { host = "api.linear.app", location = "header", name = "authorization" },
-  ]
-  value_wo         = var.api_key
   value_wo_version = var.secret_version
 }
 
@@ -134,6 +122,14 @@ resource "spotlight_integration" "this" {
   definition = {
     integration = var.integration
     name        = var.name
+
+    connection = {
+      oauth2 = {
+        authorize = "https://linear.app/oauth/authorize?actor=app"
+        token     = "https://api.linear.app/oauth/token"
+        scopes    = ["comments:create"]
+      }
+    }
 
     webhook = {
       verify = {
@@ -147,8 +143,7 @@ resource "spotlight_integration" "this" {
           }
         }
       }
-      delivery   = "$${{ headers[\"linear-delivery\"] }}"
-      ignoreWhen = "$${{ has(body.actor) && has(body.actor.id) && body.actor.id == \"${var.user_id}\" }}"
+      delivery = "$${{ headers[\"linear-delivery\"] }}"
       events = concat(local.labelled_events, [
         {
           when = "$${{ ${local.is_comment} }}"

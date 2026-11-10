@@ -15,12 +15,10 @@ mock_provider "spotlight" {
 variables {
   workspace      = "acme"
   team           = "core"
-  user_id        = "2c5e3b4a-1f0d-4e6b-9a7c-8d2e1f3a4b5c"
   signing_secret = "lin_wh_test"
-  api_key        = "lin_api_test"
 }
 
-run "creates_the_secrets_and_the_integration" {
+run "creates_the_secret_and_the_integration" {
   assert {
     condition     = spotlight_secret.signing[0].workspace_id == "5b1e9d2c-7a43-4f8e-b6c0-3d9a8e1f2b57" && spotlight_secret.signing[0].name == "LINEAR_SIGNING_SECRET"
     error_message = "The signing secret goes in the workspace, as LINEAR_SIGNING_SECRET."
@@ -29,11 +27,6 @@ run "creates_the_secrets_and_the_integration" {
   assert {
     condition     = length(spotlight_secret.signing[0].bindings) == 0
     error_message = "The signing secret is never sent anywhere."
-  }
-
-  assert {
-    condition     = [for each in spotlight_secret.api_key[0].bindings : each.host] == ["api.linear.app"] && alltrue([for each in spotlight_secret.api_key[0].bindings : each.location == "header" && each.name == "authorization"])
-    error_message = "The API key goes only to api.linear.app, in the authorization header."
   }
 
   assert {
@@ -65,9 +58,24 @@ run "verifies_deliveries_from_linear" {
     error_message = "A delivery Linear sends again is read once."
   }
 
+}
+
+run "acts_in_linear_as_an_app" {
+  command = plan
+
   assert {
-    condition     = strcontains(spotlight_integration.this[0].definition.webhook.ignoreWhen, "body.actor.id == \"2c5e3b4a-1f0d-4e6b-9a7c-8d2e1f3a4b5c\"")
-    error_message = "What the API key's own user does is ignored."
+    condition     = spotlight_integration.this[0].definition.connection.oauth2.authorize == "https://linear.app/oauth/authorize?actor=app" && spotlight_integration.this[0].definition.connection.oauth2.token == "https://api.linear.app/oauth/token"
+    error_message = "The team connects Linear through OAuth, and Spotlight acts as the app, not as the person who connected."
+  }
+
+  assert {
+    condition     = spotlight_integration.this[0].definition.connection.oauth2.scopes == ["comments:create"]
+    error_message = "The connection asks only to create comments."
+  }
+
+  assert {
+    condition     = alltrue([for each in ["post-comment", "comment"] : spotlight_integration.this[0].definition.actions[each].request.auth.oauth2.connection == true])
+    error_message = "Every request to Linear uses the team's connection."
   }
 }
 
@@ -144,6 +152,11 @@ run "answers_with_a_comment" {
     condition     = spotlight_integration.this[0].definition.webhook.events[1].raise.marks[0].value == "$${{ body.data.issueId }}" && strcontains(spotlight_integration.this[0].definition.webhook.events[1].raise.author.email, "body.actor.email")
     error_message = "A comment finds the task by its issue, and names its author by email."
   }
+
+  assert {
+    condition     = strcontains(spotlight_integration.this[0].definition.webhook.events[1].when, "!((has(body.data.botActor) && body.data.botActor != null) || (") && strcontains(spotlight_integration.this[0].definition.webhook.events[1].when, "body.actor.type == \"OauthClient\")")
+    error_message = "A comment by an app, Spotlight's own included, answers nothing."
+  }
 }
 
 run "raises_completed_and_canceled" {
@@ -174,8 +187,8 @@ run "asks_on_the_issue" {
   }
 
   assert {
-    condition     = spotlight_integration.this[0].definition.actions["post-comment"].request.url == "https://api.linear.app/graphql" && spotlight_integration.this[0].definition.actions["post-comment"].request.auth.secrets == ["secret.LINEAR_API_KEY"]
-    error_message = "Comments go to the Linear API with the API key."
+    condition     = spotlight_integration.this[0].definition.actions["post-comment"].request.url == "https://api.linear.app/graphql"
+    error_message = "Comments go to the Linear API."
   }
 
   assert {
@@ -260,25 +273,23 @@ run "names_everything_after_the_integration" {
   }
 }
 
-run "uses_existing_secrets" {
+run "uses_an_existing_signing_secret" {
   command = plan
 
   variables {
-    create_secrets      = false
-    signing_secret      = null
-    api_key             = null
-    signing_secret_name = "ACME_LINEAR_SIGNING"
-    api_key_name        = "ACME_LINEAR_KEY"
+    create_signing_secret = false
+    signing_secret        = null
+    signing_secret_name   = "ACME_LINEAR_SIGNING"
   }
 
   assert {
-    condition     = length(spotlight_secret.signing) == 0 && length(spotlight_secret.api_key) == 0
-    error_message = "No secrets are created."
+    condition     = length(spotlight_secret.signing) == 0
+    error_message = "No secret is created."
   }
 
   assert {
-    condition     = spotlight_integration.this[0].definition.webhook.verify.hmac.secret == "secret.ACME_LINEAR_SIGNING" && spotlight_integration.this[0].definition.actions["comment"].request.auth.secrets == ["secret.ACME_LINEAR_KEY"]
-    error_message = "The integration names the existing secrets."
+    condition     = spotlight_integration.this[0].definition.webhook.verify.hmac.secret == "secret.ACME_LINEAR_SIGNING"
+    error_message = "The integration names the existing secret."
   }
 }
 
@@ -290,7 +301,7 @@ run "creates_nothing_when_disabled" {
   }
 
   assert {
-    condition     = length(spotlight_integration.this) == 0 && length(spotlight_secret.signing) == 0 && length(spotlight_secret.api_key) == 0
+    condition     = length(spotlight_integration.this) == 0 && length(spotlight_secret.signing) == 0
     error_message = "A disabled module creates no resources."
   }
 
@@ -300,24 +311,14 @@ run "creates_nothing_when_disabled" {
   }
 }
 
-run "refuses_missing_secret_values" {
+run "refuses_a_missing_signing_secret" {
   command = plan
 
   variables {
-    api_key = null
+    signing_secret = null
   }
 
-  expect_failures = [var.api_key]
-}
-
-run "refuses_a_user_id_that_is_not_a_uuid" {
-  command = plan
-
-  variables {
-    user_id = "leon"
-  }
-
-  expect_failures = [var.user_id]
+  expect_failures = [var.signing_secret]
 }
 
 run "refuses_an_integration_name_with_a_dash" {

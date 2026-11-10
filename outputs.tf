@@ -40,8 +40,3 @@ output "signing_secret_name" {
   description = "The name of the workspace secret that holds the signing secret."
   value       = var.create ? local.signing_secret_name : null
 }
-
-output "api_key_name" {
-  description = "The name of the workspace secret that holds the API key."
-  value       = var.create ? local.api_key_name : null
-}
