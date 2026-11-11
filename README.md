@@ -42,7 +42,7 @@ terraform {
 
 module "linear" {
   source  = "usespotlightai/linear/spotlight"
-  version = "0.1.0-rc.1" # x-release-please-version
+  version = "0.1.0-rc.2" # x-release-please-version
 
   workspace = "acme"
   team      = "core"
