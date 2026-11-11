@@ -223,7 +223,7 @@ run "tells_the_issue_when_the_task_is_complete" {
   command = plan
 
   assert {
-    condition     = spotlight_integration.this[0].definition.on["task.finished"][0].action == "post-comment" && strcontains(spotlight_integration.this[0].definition.on["task.finished"][0].to.text, "task.pullRequest")
+    condition     = spotlight_integration.this[0].definition.on["task.finished"][0].action == "post-comment" && strcontains(spotlight_integration.this[0].definition.on["task.finished"][0].to.text, "task.pullRequests")
     error_message = "A finished task comments on its issue, with its pull request."
   }
 }
