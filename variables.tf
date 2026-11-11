@@ -31,6 +31,12 @@ variable "name" {
   default     = "Linear"
 }
 
+variable "logo" {
+  description = "The mark the web app shows for the integration, as a base64 data URI of an SVG, PNG, WebP or JPEG image or as an https address. By default, the mark of Linear."
+  type        = string
+  default     = null
+}
+
 variable "spotlight_url" {
   description = "The address of your Spotlight, used only for the `webhook_url` output. Change it for a self-hosted Spotlight."
   type        = string

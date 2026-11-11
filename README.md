@@ -210,6 +210,7 @@ No modules.
 | <a name="input_integration"></a> [integration](#input\_integration) | The integration's name in the team. It is the last part of the webhook address, and the first part of every happening and mark kind the integration raises, as in `linear.issue`. Fixed for the integration's life. | `string` | `"linear"` | no |
 | <a name="input_label"></a> [label](#input\_label) | The name of the Linear label that gives an issue to Spotlight, compared without case. An issue that gets the label opens a task. Null opens no task from Linear. | `string` | `"spotlight"` | no |
 | <a name="input_line_role"></a> [line\_role](#input\_line\_role) | The role of the line that an issue with `label` opens a task on, as in `delivery`. | `string` | `"delivery"` | no |
+| <a name="input_logo"></a> [logo](#input\_logo) | The mark the web app shows for the integration, as a base64 data URI of an SVG, PNG, WebP or JPEG image or as an https address. By default, the mark of Linear. | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | What the integration is called in the web app. | `string` | `"Linear"` | no |
 | <a name="input_secret_version"></a> [secret\_version](#input\_secret\_version) | Change it when `signing_secret` or `api_key` changes, so Terraform sends the new values to Spotlight. | `number` | `1` | no |
 | <a name="input_signing_secret"></a> [signing\_secret](#input\_signing\_secret) | The signing secret of the Linear webhook. Needed when `create_secrets` is true. | `string` | `null` | no |
