@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-rc.2](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.1...v0.1.0-rc.2) (2026-11-11)
+
+
+### Features
+
+* act in Linear as an OAuth app ([#2](https://github.com/usespotlightai/terraform-spotlight-linear/issues/2)) ([c68588b](https://github.com/usespotlightai/terraform-spotlight-linear/commit/c68588b217a2377d7d1772c20fd861dea654f2fb))
+* send the Linear mark as the integration's logo ([#3](https://github.com/usespotlightai/terraform-spotlight-linear/issues/3)) ([9f13832](https://github.com/usespotlightai/terraform-spotlight-linear/commit/9f13832ee4ddfe47d8f5006bc8a8d3ba8c22d2ba))
+
 ## [0.1.0-rc.1](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.0...v0.1.0-rc.1) (2026-11-10)
 
 
