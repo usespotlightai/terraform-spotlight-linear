@@ -102,7 +102,7 @@ locals {
       action = "post-comment"
       to = {
         thread = local.on_issue
-        text   = "$${{ \"The task “\" + task.title + \"” is complete.\" + (task.pullRequest != null ? \" Pull request: \" + string(task.pullRequest) : \"\") }}"
+        text   = "$${{ \"The task “\" + task.title + \"” is complete.\" + (size(task.pullRequests) > 0 ? \" Pull requests: \" + task.pullRequests.join(\", \") : \"\") }}"
       }
     }]
   }
