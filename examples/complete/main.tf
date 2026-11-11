@@ -9,9 +9,7 @@ module "linear" {
   team          = "core"
   spotlight_url = var.spotlight_url
 
-  user_id        = var.linear_user_id
   signing_secret = var.linear_signing_secret
-  api_key        = var.linear_api_key
 
   label     = "agent"
   line_role = "delivery"
@@ -26,5 +24,4 @@ module "linear_disabled" {
 
   workspace = "acme"
   team      = "core"
-  user_id   = var.linear_user_id
 }
