@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-rc.3](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.2...v0.1.0-rc.3) (2026-11-11)
+
+
+### Bug Fixes
+
+* list the task's pull requests when it finishes ([#5](https://github.com/usespotlightai/terraform-spotlight-linear/issues/5)) ([bd19af0](https://github.com/usespotlightai/terraform-spotlight-linear/commit/bd19af03c11db2b22af3056b98e451eadcfcbcf4))
+
 ## [0.1.0-rc.2](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.1...v0.1.0-rc.2) (2026-11-11)
 
 
