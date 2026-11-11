@@ -329,3 +329,25 @@ run "refuses_an_integration_name_with_a_dash" {
 
   expect_failures = [var.integration]
 }
+
+run "shows_the_mark_of_linear_by_default" {
+  command = plan
+
+  assert {
+    condition     = startswith(spotlight_integration.this[0].definition.logo, "data:image/svg+xml;base64,") && base64decode(trimprefix(spotlight_integration.this[0].definition.logo, "data:image/svg+xml;base64,")) == file("logo.svg")
+    error_message = "By default the integration shows the mark of Linear, from logo.svg."
+  }
+}
+
+run "shows_the_logo_it_is_given" {
+  command = plan
+
+  variables {
+    logo = "https://example.com/logo.svg"
+  }
+
+  assert {
+    condition     = spotlight_integration.this[0].definition.logo == "https://example.com/logo.svg"
+    error_message = "The integration shows the logo it is given."
+  }
+}
