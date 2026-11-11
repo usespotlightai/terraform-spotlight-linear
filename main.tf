@@ -12,6 +12,8 @@ data "spotlight_team" "this" {
 }
 
 locals {
+  logo = coalesce(var.logo, "data:image/svg+xml;base64,${filebase64("${path.module}/logo.svg")}")
+
   signing_secret_name = try(spotlight_secret.signing[0].name, var.signing_secret_name)
 
   issue_mark      = "${var.integration}.issue"
@@ -122,6 +124,7 @@ resource "spotlight_integration" "this" {
   definition = {
     integration = var.integration
     name        = var.name
+    logo        = local.logo
 
     connection = {
       oauth2 = {
