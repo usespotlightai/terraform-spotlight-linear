@@ -79,6 +79,83 @@ run "acts_in_linear_as_an_app" {
   }
 }
 
+run "connects_through_the_deployments_app_by_default" {
+  command = plan
+
+  assert {
+    condition     = !contains(keys(spotlight_integration.this[0].definition.connection.oauth2), "client")
+    error_message = "Without client_id, the connection names no client, and Spotlight uses the deployment's own Linear app."
+  }
+
+  assert {
+    condition     = length(spotlight_secret.client) == 0
+    error_message = "Without client_id, the module creates no client secret."
+  }
+}
+
+run "connects_through_your_own_app" {
+  command = plan
+
+  variables {
+    client_id     = "lin_client_1"
+    client_secret = "lin_secret_1"
+  }
+
+  assert {
+    condition     = spotlight_integration.this[0].definition.connection.oauth2.client.id == "lin_client_1" && spotlight_integration.this[0].definition.connection.oauth2.client.secret == "secret.LINEAR_CLIENT_SECRET"
+    error_message = "The connection names your app's client ID and the secret that holds its client secret."
+  }
+
+  assert {
+    condition     = spotlight_secret.client[0].name == "LINEAR_CLIENT_SECRET" && [for each in spotlight_secret.client[0].bindings : each.host] == ["api.linear.app"]
+    error_message = "The module keeps the client secret in a workspace secret, bound to api.linear.app, where Spotlight sends it to get the token."
+  }
+
+  assert {
+    condition     = output.callback_url == "https://app.usespotlight.ai/api/integrations/oauth/callback"
+    error_message = "The callback URL is the one to give your Linear app."
+  }
+}
+
+run "uses_a_client_secret_you_keep" {
+  command = plan
+
+  variables {
+    client_id            = "lin_client_1"
+    create_client_secret = false
+    client_secret_name   = "OUR_LINEAR_CLIENT"
+  }
+
+  assert {
+    condition     = length(spotlight_secret.client) == 0 && spotlight_integration.this[0].definition.connection.oauth2.client.secret == "secret.OUR_LINEAR_CLIENT"
+    error_message = "With create_client_secret false, the connection names your own secret."
+  }
+}
+
+run "refuses_a_client_without_its_secret" {
+  command = plan
+
+  variables {
+    client_id = "lin_client_1"
+  }
+
+  expect_failures = [var.client_secret]
+}
+
+run "needs_no_client_secret_while_disabled" {
+  command = plan
+
+  variables {
+    create    = false
+    client_id = "lin_client_1"
+  }
+
+  assert {
+    condition     = length(spotlight_secret.client) == 0
+    error_message = "A disabled module asks for no client secret."
+  }
+}
+
 run "opens_a_task_from_a_labelled_issue" {
   command = plan
 

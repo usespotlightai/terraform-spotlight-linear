@@ -38,7 +38,7 @@ variable "logo" {
 }
 
 variable "spotlight_url" {
-  description = "The address of your Spotlight, used only for the `webhook_url` output. Change it for a self-hosted Spotlight."
+  description = "The address of your Spotlight, used only for the `webhook_url` and `callback_url` outputs. Change it for a self-hosted Spotlight."
   type        = string
   default     = "https://app.usespotlight.ai"
 }
@@ -97,8 +97,39 @@ variable "signing_secret" {
 }
 
 
+variable "client_id" {
+  description = "The client ID of your own Linear OAuth app, which Spotlight connects the team through. Null uses the OAuth app that the Spotlight deployment keeps for Linear."
+  type        = string
+  default     = null
+}
+
+variable "create_client_secret" {
+  description = "Whether the module creates the secret that holds `client_secret`. False uses the workspace secret named `client_secret_name`, which you keep yourself, bound to `api.linear.app`. Used only with `client_id`."
+  type        = bool
+  default     = true
+}
+
+variable "client_secret" {
+  description = "The client secret of your own Linear OAuth app. Needed with `client_id` when `create_client_secret` is true."
+  type        = string
+  default     = null
+  sensitive   = true
+  ephemeral   = true
+
+  validation {
+    condition     = !var.create || var.client_id == null || !var.create_client_secret || var.client_secret != null
+    error_message = "Give client_secret with client_id, or set create_client_secret to false."
+  }
+}
+
+variable "client_secret_name" {
+  description = "The name of the workspace secret that holds the client secret."
+  type        = string
+  default     = "LINEAR_CLIENT_SECRET"
+}
+
 variable "secret_version" {
-  description = "Change it when `signing_secret` changes, so Terraform sends the new value to Spotlight."
+  description = "Change it when `signing_secret` or `client_secret` changes, so Terraform sends the new value to Spotlight."
   type        = number
   default     = 1
 }
