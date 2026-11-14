@@ -78,7 +78,8 @@ locals {
         issue = { type = "string", description = "The Linear issue, by its ID or its identifier, as in ENG-123. Without it, the task's issue.", default = local.on_issue }
         body  = { type = "string", required = true, stdin = true, description = "The comment, in Markdown." }
       }
-      output = "$${{ capture.url }}"
+      output        = "$${{ capture.url }}"
+      enabledOnMark = local.issue_mark
     },
     var.comment_approval == null ? {} : { approval = { because = var.comment_approval } },
   )

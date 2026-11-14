@@ -240,6 +240,11 @@ run "comments_from_a_tool" {
     condition     = strcontains(spotlight_integration.this[0].definition.tools["comment"].inputs.issue.default, "task.marks[\"linear.issue\"]")
     error_message = "Without an issue, the tool comments on the task's issue."
   }
+
+  assert {
+    condition     = spotlight_integration.this[0].definition.tools["comment"].enabledOnMark == "linear.issue"
+    error_message = "Each run on a task with the issue's mark has the comment tool."
+  }
 }
 
 run "asks_before_commenting_when_set" {
@@ -270,6 +275,11 @@ run "names_everything_after_the_integration" {
   assert {
     condition     = strcontains(spotlight_integration.this[0].definition.on["task.asked"][0].to.thread, "task.marks[\"tracker.issue\"]") && output.webhook_url == "https://app.usespotlight.ai/api/webhooks/w/acme/t/core/tracker"
     error_message = "Questions find the issue by the integration's own mark, and the webhook address ends with its name."
+  }
+
+  assert {
+    condition     = spotlight_integration.this[0].definition.tools["comment"].enabledOnMark == "tracker.issue" && strcontains(spotlight_integration.this[0].definition.tools["comment"].inputs.issue.default, "task.marks[\"tracker.issue\"]")
+    error_message = "The comment tool is enabled on the integration's own issue mark."
   }
 }
 

@@ -93,9 +93,11 @@ The connection asks for the `comments:create` scope, and Linear always adds `rea
 
 On a self-hosted Spotlight, set `spotlight_url` to your deployment's address so `webhook_url` is right.
 
-### Comment from a hook or a station
+### Comment from an agent or a hook
 
-Name the tool through the `tools` output, so a plan fails if the tool is renamed or removed:
+Each run on a task with a `linear.issue` mark has the `comment` tool, at every station, so an agent can tell the issue what it found. Set `comment_approval` to make a person approve each comment first.
+
+To give the tool to a station for tasks without the mark, or to call it from a hook, name it through the `tools` output, so a plan fails if the tool is renamed or removed:
 
 ```hcl
 resource "spotlight_hook" "merges" {
@@ -114,7 +116,7 @@ resource "spotlight_hook" "merges" {
 }
 ```
 
-Without `issue`, the tool comments on the issue of the task. Give `issue` as the issue's ID or identifier, as in `ENG-123`, to comment on another issue. Set `comment_approval` to make a person approve each comment first.
+Without `issue`, the tool comments on the issue of the task. Give `issue` as the issue's ID or identifier, as in `ENG-123`, to comment on another issue.
 
 ### Keep the signing secret yourself
 
