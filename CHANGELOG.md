@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-rc.4](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.3...v0.1.0-rc.4) (2026-11-14)
+
+
+### Features
+
+* give the comment tool to every run on a task with a Linear issue ([#7](https://github.com/usespotlightai/terraform-spotlight-linear/issues/7)) ([b6aa43d](https://github.com/usespotlightai/terraform-spotlight-linear/commit/b6aa43d9234cd8edba7abfeafc6838a9134326d4))
+
 ## [0.1.0-rc.3](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.2...v0.1.0-rc.3) (2026-11-11)
 
 
