@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-rc.5](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.4...v0.1.0-rc.5) (2026-11-15)
+
+
+### Features
+
+* connect the team through your own Linear OAuth app ([#9](https://github.com/usespotlightai/terraform-spotlight-linear/issues/9)) ([2c691a8](https://github.com/usespotlightai/terraform-spotlight-linear/commit/2c691a80836c8e1aa75c92691b3f126d79868448))
+
 ## [0.1.0-rc.4](https://github.com/usespotlightai/terraform-spotlight-linear/compare/v0.1.0-rc.3...v0.1.0-rc.4) (2026-11-14)
 
 
