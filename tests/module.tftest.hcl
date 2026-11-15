@@ -16,6 +16,7 @@ variables {
   workspace      = "acme"
   team           = "core"
   signing_secret = "lin_wh_test"
+  client_secret  = "lin_secret_test"
 }
 
 run "creates_the_secret_and_the_integration" {
@@ -136,7 +137,8 @@ run "refuses_a_client_without_its_secret" {
   command = plan
 
   variables {
-    client_id = "lin_client_1"
+    client_id     = "lin_client_1"
+    client_secret = null
   }
 
   expect_failures = [var.client_secret]
