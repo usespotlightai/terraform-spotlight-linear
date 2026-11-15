@@ -11,3 +11,15 @@ variable "linear_signing_secret" {
   sensitive   = true
   ephemeral   = true
 }
+
+variable "linear_client_id" {
+  description = "The client ID of the team's Linear OAuth app."
+  type        = string
+}
+
+variable "linear_client_secret" {
+  description = "The client secret of the team's Linear OAuth app."
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}

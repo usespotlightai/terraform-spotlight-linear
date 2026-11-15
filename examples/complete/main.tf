@@ -9,6 +9,8 @@ module "linear" {
   team          = "core"
   spotlight_url = var.spotlight_url
 
+  client_id      = var.linear_client_id
+  client_secret  = var.linear_client_secret
   signing_secret = var.linear_signing_secret
 
   label     = "agent"

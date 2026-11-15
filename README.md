@@ -2,7 +2,7 @@
 
 A Spotlight integration for Linear. An issue that gets the `spotlight` label opens a task on the team's delivery line, and Spotlight comments on the issue with a link to the task. A task's questions are posted as comments on its issue, and a comment on the issue answers the question. When the task is complete, Spotlight says so on the issue.
 
-The module creates a `spotlight_integration` and, unless you keep it yourself, the `spotlight_secret` that holds the webhook's signing secret, which verifies that deliveries come from Linear. Spotlight calls Linear through the team's OAuth connection, as a Linear app: its comments show the app, not a person. The integration also gives agents and hooks a `comment` tool.
+The module creates a `spotlight_integration` and, unless you keep them yourself, the `spotlight_secret` that holds the webhook's signing secret, which verifies that deliveries come from Linear, and, with `client_id`, the one that holds your Linear OAuth app's client secret. Spotlight calls Linear through the team's OAuth connection, as your Linear app: its comments show the app, not a person. The integration also gives agents and hooks a `comment` tool.
 
 ```
 Linear ──webhook (signed with the signing secret)──▶ webhook_url
@@ -47,6 +47,8 @@ module "linear" {
   workspace = "acme"
   team      = "core"
 
+  client_id      = var.linear_client_id
+  client_secret  = var.linear_client_secret
   signing_secret = var.linear_signing_secret
 }
 
@@ -81,9 +83,9 @@ reactions = [
 
 ### Prepare Linear
 
-Spotlight acts in Linear as an app, through an OAuth connection that the team makes once. Linear shows the app as the author of Spotlight's comments. Spotlight refreshes the connection's access token itself.
+Spotlight acts in Linear as your Linear app, through an OAuth connection that the team makes once. Linear shows the app, with the name and icon you give it, as the author of Spotlight's comments. Spotlight refreshes the connection's access token itself.
 
-1. Make sure your Spotlight has a Linear OAuth client for the integration's name, `linear` by default. Without one, the connect button opens nothing. To add one to a self-hosted Spotlight, create an OAuth application in Linear under Settings › API › OAuth applications, with the callback URL `https://<your Spotlight>/api/integrations/oauth/callback`. Then add its client ID and secret to the deployment's `OAUTH_CLIENTS`, as in `{"linear":{"id":"…","secret":"…"}}`.
+1. As a Linear admin, create an OAuth application under Settings › API › OAuth applications. Give `https://app.usespotlight.ai/api/integrations/oauth/callback` as its callback URL. That address is the `callback_url` output, known before you apply. Copy the application's client ID into `client_id` and its client secret into `client_secret`.
 2. As a Linear admin, create a webhook under Settings › API › Webhooks. Give `https://app.usespotlight.ai/api/webhooks/w/<workspace slug>/t/<team key>/linear` as its URL. That address is the `webhook_url` output, known before you apply. Choose the team or all public teams, and the data change events `Issues` and `Comments`.
 3. Copy the webhook's signing secret into `signing_secret`.
 4. Run `terraform apply`.
@@ -91,7 +93,7 @@ Spotlight acts in Linear as an app, through an OAuth connection that the team ma
 
 The connection asks for the `comments:create` scope, and Linear always adds `read`. Until the team connects, Spotlight posts nothing to Linear.
 
-On a self-hosted Spotlight, set `spotlight_url` to your deployment's address so `webhook_url` is right.
+On a self-hosted Spotlight, set `spotlight_url` to your deployment's address so `webhook_url` and `callback_url` are right.
 
 ### Comment from an agent or a hook
 
@@ -118,13 +120,15 @@ resource "spotlight_hook" "merges" {
 
 Without `issue`, the tool comments on the issue of the task. Give `issue` as the issue's ID or identifier, as in `ENG-123`, to comment on another issue.
 
-### Keep the signing secret yourself
+On a self-hosted Spotlight whose deployment keeps a Linear OAuth client in `OAUTH_CLIENTS`, you can leave out `client_id` and `client_secret`. The team then connects through the deployment's app.
 
-To manage the signing secret outside this module, for example read from AWS Secrets Manager, set `create_signing_secret = false` and give its name in `signing_secret_name`.
+### Keep the secrets yourself
 
-### Rotating the signing secret
+To manage the signing secret outside this module, for example read from AWS Secrets Manager, set `create_signing_secret = false` and give its name in `signing_secret_name`. For the client secret, set `create_client_secret = false` and give its name in `client_secret_name`. Bind it to `api.linear.app`, where Spotlight sends it to get the token.
 
-Give the new value in `signing_secret`, and raise `secret_version`. Terraform sends the value again.
+### Rotating a secret
+
+Give the new value in `signing_secret` or `client_secret`, and raise `secret_version`. Terraform sends the values again. Spotlight uses a new client secret from the next token refresh. The team does not connect again. A connection works only with the OAuth app it was made through. If you change `client_id`, or change between the deployment's app and yours, the team connects again.
 
 ## Conditional creation
 
@@ -182,6 +186,7 @@ No modules.
 | Name | Type |
 | ---- | ---- |
 | [spotlight_integration.this](https://registry.terraform.io/providers/usespotlightai/spotlight/latest/docs/resources/integration) | resource |
+| [spotlight_secret.client](https://registry.terraform.io/providers/usespotlightai/spotlight/latest/docs/resources/secret) | resource |
 | [spotlight_secret.signing](https://registry.terraform.io/providers/usespotlightai/spotlight/latest/docs/resources/secret) | resource |
 | [spotlight_team.this](https://registry.terraform.io/providers/usespotlightai/spotlight/latest/docs/data-sources/team) | data source |
 | [spotlight_workspace.this](https://registry.terraform.io/providers/usespotlightai/spotlight/latest/docs/data-sources/workspace) | data source |
@@ -193,24 +198,30 @@ No modules.
 | <a name="input_team"></a> [team](#input\_team) | The key of the team the integration belongs to, as in `core`. | `string` | n/a | yes |
 | <a name="input_workspace"></a> [workspace](#input\_workspace) | The slug of the Spotlight workspace, as in `acme`. | `string` | n/a | yes |
 | <a name="input_acknowledge"></a> [acknowledge](#input\_acknowledge) | Whether Spotlight comments on an issue, with a link to the task, when the issue opens a task. | `bool` | `true` | no |
+| <a name="input_client_id"></a> [client\_id](#input\_client\_id) | The client ID of your own Linear OAuth app, which Spotlight connects the team through. Null uses the OAuth app that the Spotlight deployment keeps for Linear. | `string` | `null` | no |
+| <a name="input_client_secret"></a> [client\_secret](#input\_client\_secret) | The client secret of your own Linear OAuth app. Needed with `client_id` when `create_client_secret` is true. | `string` | `null` | no |
+| <a name="input_client_secret_name"></a> [client\_secret\_name](#input\_client\_secret\_name) | The name of the workspace secret that holds the client secret. | `string` | `"LINEAR_CLIENT_SECRET"` | no |
 | <a name="input_comment_approval"></a> [comment\_approval](#input\_comment\_approval) | When set, each use of the `comment` tool first asks a person, who is shown this text. Null lets agents and hooks comment without asking. | `string` | `null` | no |
 | <a name="input_create"></a> [create](#input\_create) | Whether to create the integration and its secrets. False creates nothing. | `bool` | `true` | no |
+| <a name="input_create_client_secret"></a> [create\_client\_secret](#input\_create\_client\_secret) | Whether the module creates the secret that holds `client_secret`. False uses the workspace secret named `client_secret_name`, which you keep yourself, bound to `api.linear.app`. Used only with `client_id`. | `bool` | `true` | no |
 | <a name="input_create_signing_secret"></a> [create\_signing\_secret](#input\_create\_signing\_secret) | Whether the module creates the secret that holds `signing_secret`. False uses the workspace secret named `signing_secret_name`, which you keep yourself. | `bool` | `true` | no |
 | <a name="input_integration"></a> [integration](#input\_integration) | The integration's name in the team. It is the last part of the webhook address, and the first part of every happening and mark kind the integration raises, as in `linear.issue`. Fixed for the integration's life. | `string` | `"linear"` | no |
 | <a name="input_label"></a> [label](#input\_label) | The name of the Linear label that gives an issue to Spotlight, compared without case. An issue that gets the label opens a task. Null opens no task from Linear. | `string` | `"spotlight"` | no |
 | <a name="input_line_role"></a> [line\_role](#input\_line\_role) | The role of the line that an issue with `label` opens a task on, as in `delivery`. | `string` | `"delivery"` | no |
 | <a name="input_logo"></a> [logo](#input\_logo) | The mark the web app shows for the integration, as a base64 data URI of an SVG, PNG, WebP or JPEG image or as an https address. By default, the mark of Linear. | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | What the integration is called in the web app. | `string` | `"Linear"` | no |
-| <a name="input_secret_version"></a> [secret\_version](#input\_secret\_version) | Change it when `signing_secret` changes, so Terraform sends the new value to Spotlight. | `number` | `1` | no |
+| <a name="input_secret_version"></a> [secret\_version](#input\_secret\_version) | Change it when `signing_secret` or `client_secret` changes, so Terraform sends the new value to Spotlight. | `number` | `1` | no |
 | <a name="input_signing_secret"></a> [signing\_secret](#input\_signing\_secret) | The signing secret of the Linear webhook. Needed when `create_signing_secret` is true. | `string` | `null` | no |
 | <a name="input_signing_secret_name"></a> [signing\_secret\_name](#input\_signing\_secret\_name) | The name of the workspace secret that holds the signing secret. | `string` | `"LINEAR_SIGNING_SECRET"` | no |
-| <a name="input_spotlight_url"></a> [spotlight\_url](#input\_spotlight\_url) | The address of your Spotlight, used only for the `webhook_url` output. Change it for a self-hosted Spotlight. | `string` | `"https://app.usespotlight.ai"` | no |
+| <a name="input_spotlight_url"></a> [spotlight\_url](#input\_spotlight\_url) | The address of your Spotlight, used only for the `webhook_url` and `callback_url` outputs. Change it for a self-hosted Spotlight. | `string` | `"https://app.usespotlight.ai"` | no |
 
 ## Outputs
 
 | Name | Description |
 | ---- | ----------- |
 | <a name="output_address"></a> [address](#output\_address) | The integration's address in the workspace, as in `core/linear`. |
+| <a name="output_callback_url"></a> [callback\_url](#output\_callback\_url) | The callback URL to give your own Linear OAuth app. |
+| <a name="output_client_secret_name"></a> [client\_secret\_name](#output\_client\_secret\_name) | The name of the workspace secret that holds the client secret, or null without `client_id`. |
 | <a name="output_happenings"></a> [happenings](#output\_happenings) | The happenings the integration raises: `labelled` when an issue gets `label`, `commented` when someone comments on an issue, `completed` and `canceled` when an issue moves to a state of that type. `labelled` is null when `label` is null. |
 | <a name="output_id"></a> [id](#output\_id) | The integration's ID. |
 | <a name="output_marks"></a> [marks](#output\_marks) | The mark kinds the integration keeps on a task: `issue`, the Linear issue's ID, which finds the task, and `identifier`, as in `ENG-123`. |

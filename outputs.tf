@@ -40,3 +40,13 @@ output "signing_secret_name" {
   description = "The name of the workspace secret that holds the signing secret."
   value       = var.create ? local.signing_secret_name : null
 }
+
+output "callback_url" {
+  description = "The callback URL to give your own Linear OAuth app."
+  value       = var.create ? "${trimsuffix(var.spotlight_url, "/")}/api/integrations/oauth/callback" : null
+}
+
+output "client_secret_name" {
+  description = "The name of the workspace secret that holds the client secret, or null without `client_id`."
+  value       = var.create && var.client_id != null ? local.client_secret_name : null
+}

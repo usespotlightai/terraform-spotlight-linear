@@ -39,6 +39,8 @@ No resources.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_linear_client_id"></a> [linear\_client\_id](#input\_linear\_client\_id) | The client ID of the team's Linear OAuth app. | `string` | n/a | yes |
+| <a name="input_linear_client_secret"></a> [linear\_client\_secret](#input\_linear\_client\_secret) | The client secret of the team's Linear OAuth app. | `string` | n/a | yes |
 | <a name="input_linear_signing_secret"></a> [linear\_signing\_secret](#input\_linear\_signing\_secret) | The signing secret of the Linear webhook. | `string` | n/a | yes |
 | <a name="input_spotlight_url"></a> [spotlight\_url](#input\_spotlight\_url) | The Spotlight the integration is created in. | `string` | `"https://app.usespotlight.ai"` | no |
 

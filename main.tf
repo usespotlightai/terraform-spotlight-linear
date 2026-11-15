@@ -15,6 +15,11 @@ locals {
   logo = coalesce(var.logo, "data:image/svg+xml;base64,${filebase64("${path.module}/logo.svg")}")
 
   signing_secret_name = try(spotlight_secret.signing[0].name, var.signing_secret_name)
+  client_secret_name  = try(spotlight_secret.client[0].name, var.client_secret_name)
+
+  own_client = var.client_id == null ? {} : {
+    client = { id = var.client_id, secret = "secret.${local.client_secret_name}" }
+  }
 
   issue_mark      = "${var.integration}.issue"
   identifier_mark = "${var.integration}.identifier"
@@ -118,6 +123,16 @@ resource "spotlight_secret" "signing" {
   value_wo_version = var.secret_version
 }
 
+resource "spotlight_secret" "client" {
+  count = var.create && var.client_id != null && var.create_client_secret ? 1 : 0
+
+  workspace_id     = data.spotlight_workspace.this[0].id
+  name             = var.client_secret_name
+  bindings         = [{ host = "api.linear.app" }]
+  value_wo         = var.client_secret
+  value_wo_version = var.secret_version
+}
+
 resource "spotlight_integration" "this" {
   count = var.create ? 1 : 0
 
@@ -128,11 +143,11 @@ resource "spotlight_integration" "this" {
     logo        = local.logo
 
     connection = {
-      oauth2 = {
+      oauth2 = merge({
         authorize = "https://linear.app/oauth/authorize?actor=app"
         token     = "https://api.linear.app/oauth/token"
         scopes    = ["comments:create"]
-      }
+      }, local.own_client)
     }
 
     webhook = {
